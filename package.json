@@ -1,5 +1,6 @@
 {
-  "name": "nextn",
+  "name": "fiscalflow",
+  "description": "AI-powered tax and accounting consultancy application.",
   "version": "0.1.0",
   "private": true,
   "scripts": {
