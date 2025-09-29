@@ -1,16 +1,16 @@
-version: '3.8'
+    version: '3.8'
 
-services:
-  chatbot-frontend:
-    # Construye la imagen usando el Dockerfile en el directorio actual (.)
-    build: .
-    container_name: chatbot-contable-frontend-local
-    # Mapea el puerto 3001 de tu ordenador al puerto 3000 del contenedor
-    ports:
-      - "3001:3000"
-    # Carga las variables de entorno desde tu archivo local
-    env_file:
-      - .env.local  # <-- CAMBIO CLAVE: Usamos el archivo para desarrollo local
-    # Reinicia el contenedor automáticamente si se detiene
-    restart: unless-stopped
+    services:
+      chatbot-frontend:
+        build: .
+        container_name: chatbot-contable-frontend-prod
+        # Mapea el puerto 3001 del servidor al puerto 3000 del contenedor
+        ports:
+          - "3001:3000"
+        # Carga las variables de entorno desde el archivo de producción
+        env_file:
+          - .env.production
+        # Siempre reinicia el contenedor a menos que lo detengas manualmente
+        restart: unless-stopped
+    
 
