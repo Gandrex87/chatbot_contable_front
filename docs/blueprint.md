@@ -1,8 +1,8 @@
-# **App Name**: FiscalFlow
+# **App Name**: Chatbot_Contable
 
 ## Core Features:
 
-- User Authentication: Secure login with username/password (admin/password, contable/Temporal123), 30-minute session timeout, and manual logout.
+- User Authentication: Secure login with username/password (admin/password, contable/Temporal123) and manual logout.
 - Intelligent Chat Interface: ChatGPT-like interface for user messages and assistant responses with 'typing...' indicator, conversation history, and clear conversation button.
 - n8n Integration: Connect to n8n endpoint (https://n8n.lioncapitalg.com/webhook/42cdc9f0-2733-4771-95ff-4b14f7f1e349/chat) with payload {"action": "sendMessage", "chatInput": mensaje, "sessionId": uuid} and handle text and streaming responses. The uuid is generated, if not already present, using tool calls, to allow n8n to handle conversational flow.
 - Report ID Detection: Automatically detect 'ReportId: [number]' patterns in chat responses, triggering the PDF download interface. It uses tool calls to generate more complex reportId
