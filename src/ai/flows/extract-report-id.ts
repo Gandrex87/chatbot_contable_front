@@ -1,13 +1,5 @@
 'use server';
 
-/**
- * @fileOverview Extracts the ReportId from a chat response using a regex and returns it.
- *
- * @extractReportId - A function that extracts the report ID from a chat response.
- * @ExtractReportIdInput - The input type for the extractReportId function.
- * @ExtractReportIdOutput - The return type for the extractReportId function.
- */
-
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
@@ -17,7 +9,7 @@ const ExtractReportIdInputSchema = z.object({
 export type ExtractReportIdInput = z.infer<typeof ExtractReportIdInputSchema>;
 
 const ExtractReportIdOutputSchema = z.object({
-  reportId: z.string().optional().describe('The extracted ReportId, if found.'),
+  reportId: z.string().optional().describe('The extracted ReportId as a string, if found.'),
 });
 export type ExtractReportIdOutput = z.infer<typeof ExtractReportIdOutputSchema>;
 
@@ -29,17 +21,27 @@ const extractReportIdPrompt = ai.definePrompt({
   name: 'extractReportIdPrompt',
   input: {schema: ExtractReportIdInputSchema},
   output: {schema: ExtractReportIdOutputSchema},
-  prompt: `Extract the ReportId from the following chat response. The ReportId is a number that follows the text "ReportId:".
+  prompt: `Extract the ReportId from the following chat response. Look for patterns like:
+- "ReportId: 123"
+- "🆔 **ReportId:** 456"
+- "ID: 789"
+- "reportId: 321"
+- "identificador interno: 654"
+
+The ReportId is always a number. Extract only the numeric value and return it as a string.
 
 Chat Response: {{{chatResponse}}}
 
 If no ReportId is found, return an empty object.
 
-Example:
-Chat Response: Here is your report. ReportId: 12345
-Output: { "reportId": "12345" }
+Examples:
+Chat Response: "✅ Reporte generado. 🆔 **ReportId:** 123"
+Output: { "reportId": "123" }
 
-Chat Response: Here is your report.
+Chat Response: "El PDF está listo. ID: 456"
+Output: { "reportId": "456" }
+
+Chat Response: "Aquí tienes tu reporte sin ID"
 Output: { }
 `,
 });
@@ -51,7 +53,32 @@ const extractReportIdFlow = ai.defineFlow(
     outputSchema: ExtractReportIdOutputSchema,
   },
   async input => {
-    const {output} = await extractReportIdPrompt(input);
-    return output!;
+    try {
+      const {output} = await extractReportIdPrompt(input);
+      return output!;
+    } catch (error) {
+      console.error('Error extracting reportId:', error);
+      // Fallback a regex si falla Genkit AI
+      return fallbackRegexExtraction(input.chatResponse);
+    }
   }
 );
+
+// Función de respaldo con regex
+function fallbackRegexExtraction(chatResponse: string): ExtractReportIdOutput {
+  const patterns = [
+    /🆔\s*\*?\*?reportId\*?\*?[:\s]*`?(\d+)`?/i,
+    /reportId[:\s]*\*?\*?\s*`?(\d+)`?/i,
+    /ID[:\s]*\*?\*?\s*`?(\d+)`?/i,
+    /identificador[:\s]*`?(\d+)`?/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = chatResponse.match(pattern);
+    if (match) {
+      return { reportId: match[1] }; // Devolver como string
+    }
+  }
+  
+  return {};
+}

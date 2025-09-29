@@ -2,11 +2,12 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, TestTube, MessageSquare } from "lucide-react";
 import type { Message } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
+import Image from "next/image";
 
 type AppSidebarProps = {
   messages: Message[];
@@ -20,10 +21,17 @@ export function AppSidebar({ messages }: AppSidebarProps) {
   return (
     <div className="flex h-full flex-col bg-card p-4">
       <div className="flex flex-col items-center gap-4">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={`https://i.pravatar.cc/150?u=${user?.id}`} />
-          <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-        </Avatar>
+        {/* Logo de la empresa */}
+        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+          <Image 
+            src="/logo.svg" 
+            alt="Lion Capital Logo" 
+            width={64} 
+            height={64}
+            className="object-contain"
+          />
+        </div>
+        
         <div className="text-center">
           <p className="font-semibold text-lg">{user?.name}</p>
           <p className="text-sm text-muted-foreground">@{user?.username}</p>
@@ -43,7 +51,7 @@ export function AppSidebar({ messages }: AppSidebarProps) {
           <CardContent className="text-sm space-y-2">
             <div className="flex justify-between">
               <span>Mensajes totales:</span>
-              <span className="font-medium">{messages.length - 1}</span>
+              <span className="font-medium">{Math.max(0, messages.length - 1)}</span>
             </div>
             <div className="flex justify-between">
               <span>Tus mensajes:</span>

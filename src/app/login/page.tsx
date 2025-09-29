@@ -41,8 +41,8 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex flex-col items-center gap-4 mb-8">
         {logo && <Image src={logo.imageUrl} alt={logo.description} width={64} height={64} className="text-primary" data-ai-hint={logo.imageHint} />}
-        <h1 className="text-3xl font-bold font-headline">FiscalFlow</h1>
-        <p className="text-muted-foreground">Tu asistente fiscal y contable inteligente.</p>
+        <h1 className="text-3xl font-bold font-headline">Chatbot Contable</h1>
+        <p className="text-muted-foreground">Asistente fiscal y contable inteligente.</p>
       </div>
       <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
     </main>

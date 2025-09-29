@@ -1,5 +1,6 @@
 "use client";
 
+import { getUserInfo } from '@/lib/user-config';
 import type { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import React, {
@@ -9,7 +10,6 @@ import React, {
   useCallback,
 } from "react";
 
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 interface AuthContextType {
   user: User | null;
@@ -23,11 +23,9 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 const validUsers = {
   admin: {
     password: "password",
-    user: { id: "1", username: "admin", name: "Admin User" },
   },
   contable: {
     password: "Temporal123",
-    user: { id: "2", username: "contable", name: "Contable User" },
   },
 };
 
@@ -43,20 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const resetTimeout = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(logout, SESSION_TIMEOUT);
-    };
-
     try {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
-        resetTimeout();
-        window.addEventListener("mousemove", resetTimeout);
-        window.addEventListener("keydown", resetTimeout);
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
@@ -64,21 +52,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-    
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener("mousemove", resetTimeout);
-      window.removeEventListener("keydown", resetTimeout);
-    };
-  }, [logout]);
+  }, []);
   
   const login = async (username: string, password: string) => {
     const lowercasedUsername = username.toLowerCase();
+    
     if (
       lowercasedUsername in validUsers &&
       validUsers[lowercasedUsername as keyof typeof validUsers].password === password
     ) {
-      const loggedInUser = validUsers[lowercasedUsername as keyof typeof validUsers].user;
+      // Obtener información completa del usuario desde user-config
+      const userConfig = getUserInfo(lowercasedUsername);
+      
+      // Generar ID único
+      const userId = `user_${lowercasedUsername}_${Date.now()}`;
+      
+      // Crear objeto User con información completa
+      const loggedInUser: User = {
+        id: userId,
+        username: lowercasedUsername,
+        name: userConfig.fullName,
+        role: userConfig.role,
+        style: userConfig.style,
+      };
+      
       setUser(loggedInUser);
       localStorage.setItem("user", JSON.stringify(loggedInUser));
       return true;

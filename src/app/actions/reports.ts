@@ -1,60 +1,106 @@
 "use server";
 
+import { Pool } from 'pg';
 import type { ReportData } from "@/lib/types";
 
-// Dummy base64 for a tiny blank PDF.
-const DUMMY_PDF_BASE64 = "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nCi9QYWdlcyAyIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcwovQ291bnQgMQovS2lkcyBbMyAwIFJdCj4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCAxMDAgMTAwXQovQ29udGVudHMgNCAwIFIKL1Jlc291cmNlcyA1IDAgUgo+PgplbmRvYmoKNSAwIG9iago8PC9Gb250IDw8L0YxIDYgMCBSID4+Cj4+CmVuZG9iago0IDAgb2JqCjw8L0xlbmd0aCA1OSc+PgpzdHJlYW0KQlQKICAvRjEgMTIgVGYKICAyMCA4MCBUZAogIChIZWxsbyBSZXBvcnQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNiAwIG9iago8PC9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovQmFzZUZvbnQgL0hlbHZldGljYQo+PgplbmRvYmoKeHJlZgowIDcKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAwNjkgMDAwMDAgbiAKMDAwMDAwMDEwMyAwMDAwMCBuIAowMDAwMDAwMjQxIDAwMDAwIG4gCjAwMDAwMDAxODggMDAwMDAgbiAKMDAwMDAwMDMzOCAwMDAwMCBuIAp0cmFpbGVyCjw8L1Jvb3QgMSAwIFIKL1NpemUgNwo+PgpzdGFydHhyZWYKNDI0CiUlRU9G";
+const pool = new Pool({
+  host: process.env.DB_HOST || '10.1.0.188', // ← localhost
+  port: parseInt(process.env.DB_PORT || '5433'),
+  database: process.env.DB_NAME || 'n8n', // ← Cambiar
+  user: process.env.DB_USER || 'n8n',          // ← Cambiar  
+  password: process.env.DB_PASSWORD || 'testpostgrespass33'   // ← Cambiar
+});
 
-
-export async function getReportData(reportId: string): Promise<{ success: true; data: ReportData } | { success: false; error: string }> {
+export async function getReportData(reportId: string): Promise<{ 
+  success: true; 
+  data: ReportData 
+} | { 
+  success: false; 
+  error: string 
+}> {
   console.log(`Fetching report data for ID: ${reportId}`);
 
-  // In a real application, you would connect to your PostgreSQL database here.
-  // Example:
-  // const { Pool } = require('pg');
-  // const pool = new Pool({
-  //   user: process.env.DB_USER,
-  //   host: process.env.DB_HOST, // '10.1.0.188'
-  //   database: process.env.DB_NAME,
-  //   password: process.env.DB_PASSWORD,
-  //   port: process.env.DB_PORT, // 5433
-  // });
-  // try {
-  //   const res = await pool.query('SELECT file_name, pdf_data FROM holded_reports WHERE id = $1', [reportId]);
-  //   if (res.rows.length > 0) {
-  //     const { file_name, pdf_data } = res.rows[0];
-  //     // Verify magic bytes if needed
-  //     const buffer = Buffer.from(pdf_data, 'base64');
-  //     if (buffer.toString('hex', 0, 4) !== '25504446') { // %PDF
-  //        return { success: false, error: 'File is not a valid PDF.' };
-  //     }
-  //     return { success: true, data: { fileName: file_name, pdfData: pdf_data, ... } };
-  //   } else {
-  //     return { success: false, error: 'Report not found.' };
-  //   }
-  // } catch (e) {
-  //   console.error(e);
-  //   return { success: false, error: 'Database connection error.' };
-  // }
-  
-  // MOCK IMPLEMENTATION
-  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+  try {
+    const client = await pool.connect();
+    
+    try {
+      const result = await client.query(`
+        SELECT 
+          id, file_name, report_name, report_type,
+          start_date, end_date, file_size, pdf_data,
+          created_at, download_count
+        FROM holded_reports 
+        WHERE id = $1 
+        AND (expires_at IS NULL OR expires_at > NOW())
+      `, [reportId]);
 
-  if (reportId === "0") {
-      return { success: false, error: "Reporte no encontrado." };
+      if (result.rows.length === 0) {
+        return { success: false, error: 'Reporte no encontrado o expirado' };
+      }
+
+      const report = result.rows[0];
+      
+      // Incrementar contador de descargas
+      await client.query(
+        'UPDATE holded_reports SET download_count = download_count + 1 WHERE id = $1',
+        [reportId]
+      );
+
+      // Procesar pdf_data desde PostgreSQL
+      let pdfData = '';
+      if (report.pdf_data) {
+        if (typeof report.pdf_data === 'string') {
+          pdfData = report.pdf_data;
+        } else if (Buffer.isBuffer(report.pdf_data)) {
+          pdfData = report.pdf_data.toString('utf8');
+        } else if (report.pdf_data.data && Array.isArray(report.pdf_data.data)) {
+          // Si es Buffer object con array de bytes
+          pdfData = Buffer.from(report.pdf_data.data).toString('utf8');
+        }
+      }
+
+      // Verificar que el PDF sea válido (magic bytes)
+      if (pdfData) {
+        try {
+          const buffer = Buffer.from(pdfData, 'base64');
+          if (!buffer.subarray(0, 4).equals(Buffer.from('%PDF'))) {
+            return { success: false, error: 'El archivo no es un PDF válido' };
+          }
+        } catch (e) {
+          return { success: false, error: 'Error procesando datos del PDF' };
+        }
+      } else {
+        return { success: false, error: 'No se encontraron datos del PDF' };
+      }
+
+      const reportData: ReportData = {
+        fileName: report.file_name,
+        pdfData: pdfData,
+        size: report.file_size,
+        date: report.created_at.toISOString(),
+        type: report.report_name
+      };
+
+      return { success: true, data: reportData };
+
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('Error obteniendo reporte:', error);
+    
+    if (error instanceof Error) {
+      // Errores específicos de conexión
+      if (error.message.includes('ECONNREFUSED')) {
+        return { success: false, error: 'No se puede conectar a la base de datos' };
+      }
+      if (error.message.includes('authentication failed')) {
+        return { success: false, error: 'Error de autenticación de base de datos' };
+      }
+      return { success: false, error: error.message };
+    }
+    
+    return { success: false, error: 'Error interno del servidor' };
   }
-  
-  const fileName = `reporte_fiscal_${reportId}_${new Date().toISOString().split('T')[0]}.pdf`;
-  const pdfData = DUMMY_PDF_BASE64;
-
-  return {
-    success: true,
-    data: {
-      fileName: fileName,
-      pdfData: pdfData,
-      size: (pdfData.length * 3) / 4, // Approximate size from base64
-      date: new Date().toISOString(),
-      type: "Fiscal",
-    },
-  };
 }

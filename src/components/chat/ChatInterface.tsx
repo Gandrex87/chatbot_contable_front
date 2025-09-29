@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@/hooks/use-auth";
 import { useState, useRef, useEffect } from "react";
 import type { Message } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -13,11 +14,25 @@ import { extractReportId } from "@/ai/flows/extract-report-id";
 const welcomeMessage: Message = {
   id: "0",
   role: "assistant",
-  content:
-    "Soy tu asistente especializado en normativa fiscal y contable española. Mi base de conocimiento incluye Plan General Contable, módulos IRPF 2024-2025, reglamentos IVA y facturación. Además puedo generar reportes de Holded con descarga directa de PDFs.",
+  content: `Soy tu asistente especializado en normativa contable española.
+
+**📚 Puedo ayudarte con:**\n\n
+
+* **Consultas normativas**: Plan General Contable, módulos IRPF 2024-2025, reglamento IVA y facturación, epígrafes IAE.
+* **Información actualizada**: Últimas novedades fiscales, cambios normativos del BOE, actualizaciones de la Agencia Tributaria.
+* **Reportes financieros de Holded**: Genera y descarga PDFs de Pérdidas y Ganancias o Balance de Situación por cualquier período.\n\n
+\n
+**💡 Ejemplos de lo que puedes preguntarme:** \n\n
+
+"¿cuentame sobre Artículo 11. Concepto de prestación de servicios del BOE de 1992?,"
+"Genera el reporte de pérdidas y ganancias del primer trimestre 2025,"
+"Dame el balance de situación de 2025". \n
+
+¿En qué puedo ayudarte hoy?`,
 };
 
 export function ChatInterface() {
+  const { user } = useAuth(); // ← Añadido
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +83,7 @@ export function ChatInterface() {
         body: JSON.stringify({
           message: input,
           sessionId,
+          username: user?.username, // ← Añadido
           history: messages,
         }),
       });

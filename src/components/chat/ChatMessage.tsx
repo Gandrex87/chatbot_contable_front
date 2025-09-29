@@ -5,6 +5,7 @@ import { Bot, User } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { TypingIndicator } from "./TypingIndicator";
 import { PdfDownloader } from "../reports/PdfDownloader";
+import ReactMarkdown from "react-markdown";
 
 type ChatMessageProps = {
   message: Message;
@@ -41,7 +42,8 @@ export function ChatMessage({ message, isTyping = false }: ChatMessageProps) {
         {isTyping ? (
           <TypingIndicator />
         ) : (
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          //<p className="whitespace-pre-wrap">{message.content}</p>
+          <ReactMarkdown>{message.content}</ReactMarkdown>
         )}
         {message.reportId && (
           <PdfDownloader

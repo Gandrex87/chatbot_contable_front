@@ -2,6 +2,8 @@ export type User = {
   id: string;
   username: string;
   name: string;
+  role?: string;        // ← Añadir
+  style?: string;       // ← Añadir
 };
 
 export type Message = {
@@ -20,3 +22,4 @@ export type ReportData = {
   date: string;
   type: string;
 };
+
