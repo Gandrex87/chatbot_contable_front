@@ -16,23 +16,34 @@ const welcomeMessage: Message = {
   role: "assistant",
   content: `Soy tu asistente especializado en normativa contable española.
 
-**📚 Puedo ayudarte con:**\n\n
+## 📚 Puedo ayudarte con:
 
-* **Consultas normativas**: Plan General Contable, módulos IRPF 2024-2025, reglamento IVA y facturación, epígrafes IAE.
-* **Información actualizada**: Últimas novedades fiscales, cambios normativos del BOE, actualizaciones de la Agencia Tributaria.
-* **Reportes financieros de Holded**: Genera y descarga PDFs de Pérdidas y Ganancias o Balance de Situación por cualquier período.\n\n
-\n
-**💡 Ejemplos de lo que puedes preguntarme:** \n\n
+**Consultas normativas**
+- Plan General Contable
+- Módulos IRPF 2024-2025
+- Reglamento IVA y facturación
+- Epígrafes IAE
 
-"¿cuentame sobre Artículo 11. Concepto de prestación de servicios del BOE de 1992?,"
-"Genera el reporte de pérdidas y ganancias del primer trimestre 2025,"
-"Dame el balance de situación de 2025". \n
+**Información actualizada**
+- Últimas novedades fiscales
+- Cambios normativos del BOE
+- Actualizaciones de la Agencia Tributaria
+
+**Reportes financieros de Holded**
+- Genera y descarga PDFs de Pérdidas y Ganancias
+- Balance de Situación por cualquier período
+
+## 💡 Ejemplos de consultas:
+
+- *"¿Cuéntame sobre el Artículo 11 del BOE de 1992?"*
+- *"Genera el reporte de pérdidas y ganancias del Q1 2025"*
+- *"Dame el balance de situación de 2025"*
 
 ¿En qué puedo ayudarte hoy?`,
 };
 
 export function ChatInterface() {
-  const { user } = useAuth(); // ← Añadido
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +60,10 @@ export function ChatInterface() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -83,7 +97,7 @@ export function ChatInterface() {
         body: JSON.stringify({
           message: input,
           sessionId,
-          username: user?.username, // ← Añadido
+          username: user?.username,
           history: messages,
         }),
       });
@@ -109,11 +123,8 @@ export function ChatInterface() {
       }
 
       const { reportId } = await extractReportId({ chatResponse: fullResponse });
-      console.log('ReportId extraído:', reportId);
-      console.log('Respuesta completa:', fullResponse);
-
+      
       if (reportId) {
-        console.log('✅ ReportId detectado, actualizando mensaje');
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
@@ -139,14 +150,23 @@ export function ChatInterface() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-lg font-semibold font-headline">Chat Inteligente</h2>
-        <Button variant="ghost" size="icon" onClick={handleClear} title="Limpiar conversación">
-          <Eraser className="h-5 w-5" />
+      {/* Header - Responsive */}
+      <div className="flex items-center justify-between p-3 md:p-4 border-b bg-card/50 backdrop-blur">
+        <h2 className="text-base md:text-lg font-semibold font-headline">Chat Contable</h2>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleClear} 
+          title="Limpiar conversación"
+          className="h-8 w-8 md:h-9 md:w-9"
+        >
+          <Eraser className="h-4 w-4 md:h-5 md:w-5" />
         </Button>
       </div>
-      <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
+
+      {/* Chat Area - Responsive padding */}
+      <ScrollArea className="flex-grow px-3 md:px-4 py-4" ref={scrollAreaRef}>
+        <div className="space-y-4 pb-4 max-w-4xl mx-auto">
           {messages.map((message, index) => (
             <ChatMessage
               key={message.id}
@@ -156,21 +176,28 @@ export function ChatInterface() {
           ))}
         </div>
       </ScrollArea>
-      <div className="border-t p-4">
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+
+      {/* Input Area - Responsive */}
+      <div className="border-t p-3 md:p-4 bg-card/50 backdrop-blur">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2 max-w-4xl mx-auto">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Escribe tu consulta aquí..."
             disabled={isLoading}
             autoComplete="off"
+            className="flex-1 h-9 md:h-10 text-sm md:text-base"
           />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
+          <Button 
+            type="submit" 
+            disabled={isLoading || !input.trim()}
+            className="h-9 w-9 md:h-10 md:w-10 p-0"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>
-         <p className="text-xs text-muted-foreground mt-2 text-center">
-          FiscalFlow puede cometer errores. Considera verificar la información importante.
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          El Agente de IA puede cometer errores. Considera verificar la información importante.
         </p>
       </div>
     </div>

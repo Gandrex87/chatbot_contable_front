@@ -10,18 +10,18 @@ export interface UserConfig {
 
 export const USER_MAPPING: Record<UserRole, UserConfig> = {
   admin: {
-    fullName: "Andrés",
-    role: "Administrador",
+    fullName: "Pablo",
+    role: "Director",
     style: "estratégico",
   },
   contable: {
-    fullName: "Allan",
+    fullName: "Paloma",
     role: "Contable",
     style: "técnico-detallado",
   },
   usuario: {
-    fullName: "Carlos",
-    role: "Usuario",
+    fullName: "Gabriel",
+    role: "Contable",
     style: "normativo",
   },
 };

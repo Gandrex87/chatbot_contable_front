@@ -16,7 +16,7 @@ import { Toaster } from "@/components/ui/toaster";
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([]); // This state will be lifted up or managed differently
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -40,11 +40,16 @@ export default function HomePage() {
 
   return (
     <>
-    <div className="flex min-h-screen w-full bg-background">
-      <aside className="hidden md:block md:w-80 lg:w-96 border-r">
+    {/* Contenedor principal con altura fija de pantalla */}
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Sidebar - Fijo sin scroll */}
+      <aside className="hidden md:flex md:w-58 lg:w-50 border-r bg-card">
         <AppSidebar messages={messages} />
       </aside>
-      <div className="flex flex-1 flex-col">
+      
+      {/* Área principal - Con estructura de flex columna */}
+      <div className="flex flex-1 flex-col h-screen">
+        {/* Header - Fijo en la parte superior */}
         <Header
           mobileMenuTrigger={
             <Sheet>
@@ -60,11 +65,14 @@ export default function HomePage() {
             </Sheet>
           }
         />
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {/* A better way would be to lift state up to this component */}
+        
+        {/* Área del chat - Ocupa el espacio restante */}
+        <main className="flex-1 overflow-hidden">
           <ChatInterface />
         </main>
-        <footer className="border-t p-4 text-center text-xs text-muted-foreground">
+        
+        {/* Footer - Fijo en la parte inferior */}
+        <footer className="border-t p-4 text-center text-xs text-muted-foreground bg-card">
           © {new Date().getFullYear()} LION CAPITAL GROUP S,L. All rights reserved.
         </footer>
       </div>

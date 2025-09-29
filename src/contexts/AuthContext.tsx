@@ -22,7 +22,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 const validUsers = {
   admin: {
-    password: "password",
+    password: "Temporal123",
   },
   contable: {
     password: "Temporal123",
