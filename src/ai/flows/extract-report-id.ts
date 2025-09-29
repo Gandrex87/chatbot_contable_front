@@ -66,19 +66,24 @@ const extractReportIdFlow = ai.defineFlow(
 
 // Función de respaldo con regex
 function fallbackRegexExtraction(chatResponse: string): ExtractReportIdOutput {
+  console.log('Buscando reportId en:', chatResponse.substring(0, 200));
+  
   const patterns = [
     /🆔\s*\*?\*?reportId\*?\*?[:\s]*`?(\d+)`?/i,
     /reportId[:\s]*\*?\*?\s*`?(\d+)`?/i,
     /ID[:\s]*\*?\*?\s*`?(\d+)`?/i,
     /identificador[:\s]*`?(\d+)`?/i,
+    /base de datos[.\s]*ID[:\s]*`?(\d+)`?/i,
   ];
 
   for (const pattern of patterns) {
     const match = chatResponse.match(pattern);
     if (match) {
-      return { reportId: match[1] }; // Devolver como string
+      console.log('✅ ReportId encontrado:', match[1]);
+      return { reportId: match[1] };
     }
   }
   
+  console.log('❌ No se encontró reportId');
   return {};
 }

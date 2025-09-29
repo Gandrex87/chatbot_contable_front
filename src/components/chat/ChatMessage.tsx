@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bot, User } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { TypingIndicator } from "./TypingIndicator";
 import { PdfDownloader } from "../reports/PdfDownloader";
 import ReactMarkdown from "react-markdown";
+import Image from "next/image";
 
 type ChatMessageProps = {
   message: Message;
@@ -24,11 +25,15 @@ export function ChatMessage({ message, isTyping = false }: ChatMessageProps) {
       )}
     >
       {!isUser && (
-        <Avatar className="h-8 w-8 border">
-          <AvatarFallback>
-            <Bot className="h-5 w-5" />
-          </AvatarFallback>
-        </Avatar>
+        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border">
+          <Image 
+            src="/logo.svg" 
+            alt="FiscalFlow AI" 
+            width={24} 
+            height={24}
+            className="object-contain"
+          />
+        </div>
       )}
 
       <div
@@ -42,8 +47,9 @@ export function ChatMessage({ message, isTyping = false }: ChatMessageProps) {
         {isTyping ? (
           <TypingIndicator />
         ) : (
-          //<p className="whitespace-pre-wrap">{message.content}</p>
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          <div className="prose prose-sm max-w-none dark:prose-invert">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
         )}
         {message.reportId && (
           <PdfDownloader
@@ -57,8 +63,9 @@ export function ChatMessage({ message, isTyping = false }: ChatMessageProps) {
 
       {isUser && (
         <Avatar className="h-8 w-8">
-          <AvatarImage src={`https://i.pravatar.cc/150?u=${authUser?.id}`} />
-          <AvatarFallback>{authUser?.name.charAt(0)}</AvatarFallback>
+          <AvatarFallback className="bg-primary text-primary-foreground">
+            {authUser?.name.charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
       )}
     </div>

@@ -66,10 +66,7 @@ export function AppSidebar({ messages }: AppSidebarProps) {
       </div>
       
       <div className="mt-auto flex flex-col gap-2">
-        <Button variant="ghost" className="w-full justify-start">
-          <TestTube className="mr-2 h-4 w-4" />
-          Test de conexión n8n
-        </Button>
+        
         <Button variant="destructive" onClick={logout} className="w-full">
           <LogOut className="mr-2 h-4 w-4" />
           Cerrar Sesión

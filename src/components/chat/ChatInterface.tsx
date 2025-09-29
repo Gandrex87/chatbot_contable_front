@@ -109,7 +109,11 @@ export function ChatInterface() {
       }
 
       const { reportId } = await extractReportId({ chatResponse: fullResponse });
+      console.log('ReportId extraído:', reportId);
+      console.log('Respuesta completa:', fullResponse);
+
       if (reportId) {
+        console.log('✅ ReportId detectado, actualizando mensaje');
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId

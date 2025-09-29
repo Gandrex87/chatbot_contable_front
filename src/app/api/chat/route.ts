@@ -24,7 +24,6 @@ export async function POST(req: Request) {
       action: "sendMessage",
       chatInput: message,
       sessionId: personalizedSessionId,
-      // Metadata de usuario para personalizar respuestas
       userMetadata: {
         userId: username || 'usuario',
         userName: userInfo.fullName,
