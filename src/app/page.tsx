@@ -97,18 +97,20 @@ export default function HomePage() {
   return (
     <>
     <div className="flex h-screen w-full bg-background overflow-hidden">
-      {/* Sidebar - Fijo sin scroll */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 border-r bg-card">
-        <AppSidebar 
-          messages={messages} 
-          onNewConversation={handleNewConversation}
-          currentSessionId={currentSessionId}
-          onSelectConversation={handleSelectConversation}
-        />
+      {/* Sidebar - Fijo sin scroll con ancho controlado */}
+      <aside className="hidden md:flex md:w-64 lg:w-72 flex-shrink-0 border-r bg-card overflow-hidden">
+        <div className="w-full h-full overflow-hidden">
+          <AppSidebar 
+            messages={messages} 
+            onNewConversation={handleNewConversation}
+            currentSessionId={currentSessionId}
+            onSelectConversation={handleSelectConversation}
+          />
+        </div>
       </aside>
       
       {/* Área principal - Con estructura de flex columna */}
-      <div className="flex flex-1 flex-col h-screen">
+      <div className="flex flex-1 flex-col h-screen min-w-0">
         {/* Header - Fijo en la parte superior */}
         <Header
           mobileMenuTrigger={
@@ -119,20 +121,22 @@ export default function HomePage() {
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-80">
-                <AppSidebar 
-                  messages={messages} 
-                  onNewConversation={handleNewConversation}
-                  currentSessionId={currentSessionId}
-                  onSelectConversation={handleSelectConversation}
-                />
+              <SheetContent side="left" className="p-0 w-80 overflow-hidden">
+                <div className="w-full h-full overflow-hidden">
+                  <AppSidebar 
+                    messages={messages} 
+                    onNewConversation={handleNewConversation}
+                    currentSessionId={currentSessionId}
+                    onSelectConversation={handleSelectConversation}
+                  />
+                </div>
               </SheetContent>
             </Sheet>
           }
         />
         
         {/* Área del chat - Ocupa el espacio restante */}
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden min-w-0">
           <ChatInterface ref={chatRef} onMessagesUpdate={setMessages} />
         </main>
         

@@ -106,19 +106,19 @@ export function ConversationsList({
   const groupOrder = ["Hoy", "Ayer", "Esta semana", "Este mes", "Anteriores"];
 
   return (
-    <div className="space-y-2">
+    <div className="w-full min-w-0 space-y-2">
       <h3 className="text-xs font-semibold text-muted-foreground px-1">
         Conversaciones
       </h3>
       
-      <ScrollArea className="h-[300px]">
-        <div className="space-y-3 pr-2">
+      <ScrollArea className="w-full h-[300px]">
+        <div className="w-full min-w-0 space-y-3 pr-2">
           {groupOrder.map(groupName => {
             const convos = groupedConversations[groupName];
             if (!convos || convos.length === 0) return null;
             
             return (
-              <div key={groupName} className="space-y-1">
+              <div key={groupName} className="w-full min-w-0 space-y-1">
                 <p className="text-xs font-medium text-muted-foreground px-1 py-0.5">
                   {groupName}
                 </p>
@@ -126,27 +126,27 @@ export function ConversationsList({
                   <Card
                     key={conversation.sessionId}
                     className={cn(
-                      "p-2 cursor-pointer hover:bg-accent/50 transition-colors",
+                      "w-full min-w-0 p-2 cursor-pointer hover:bg-accent/50 transition-colors",
                       "border-l-2 border-l-transparent",
                       currentSessionId === conversation.sessionId && 
                       "bg-accent border-l-primary"
                     )}
                     onClick={() => onSelectConversation(conversation.sessionId)}
                   >
-                    <div className="space-y-1">
-                      <p className="font-medium text-xs truncate leading-tight">
+                    <div className="w-full min-w-0 space-y-1">
+                      <p className="font-medium text-xs truncate leading-tight w-full">
                         {conversation.title}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground truncate w-full">
                         {conversation.lastMessage}
                       </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-0.5">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                        <span className="flex items-center gap-0.5 shrink-0">
                           <MessageSquare className="h-2.5 w-2.5" />
                           {conversation.messageCount}
                         </span>
-                        <span className="text-xs">•</span>
-                        <span className="truncate">
+                        <span className="text-xs shrink-0">•</span>
+                        <span className="truncate min-w-0">
                           {formatDistanceToNow(conversation.updatedAt, { 
                             addSuffix: true,
                             locale: es 
