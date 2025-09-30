@@ -6,7 +6,7 @@ import { getConversationsList, type Conversation } from "@/app/actions/conversat
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Clock, ChevronRight, Loader2 } from "lucide-react";
+import { MessageSquare, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -106,56 +106,53 @@ export function ConversationsList({
   const groupOrder = ["Hoy", "Ayer", "Esta semana", "Este mes", "Anteriores"];
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-muted-foreground px-2">
-        Conversaciones Recientes
+    <div className="space-y-2">
+      <h3 className="text-xs font-semibold text-muted-foreground px-1">
+        Conversaciones
       </h3>
       
-      <ScrollArea className="h-[400px]">
-        <div className="space-y-4 pr-4">
+      <ScrollArea className="h-[300px]">
+        <div className="space-y-3 pr-2">
           {groupOrder.map(groupName => {
             const convos = groupedConversations[groupName];
             if (!convos || convos.length === 0) return null;
             
             return (
               <div key={groupName} className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground px-2 py-1">
+                <p className="text-xs font-medium text-muted-foreground px-1 py-0.5">
                   {groupName}
                 </p>
                 {convos.map((conversation) => (
                   <Card
                     key={conversation.sessionId}
                     className={cn(
-                      "p-3 cursor-pointer hover:bg-accent/50 transition-colors",
+                      "p-2 cursor-pointer hover:bg-accent/50 transition-colors",
                       "border-l-2 border-l-transparent",
                       currentSessionId === conversation.sessionId && 
                       "bg-accent border-l-primary"
                     )}
                     onClick={() => onSelectConversation(conversation.sessionId)}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {conversation.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {conversation.lastMessage}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {conversation.messageCount}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(conversation.updatedAt, { 
-                              addSuffix: true,
-                              locale: es 
-                            })}
-                          </span>
-                        </div>
+                    <div className="space-y-1">
+                      <p className="font-medium text-xs truncate leading-tight">
+                        {conversation.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {conversation.lastMessage}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-0.5">
+                          <MessageSquare className="h-2.5 w-2.5" />
+                          {conversation.messageCount}
+                        </span>
+                        <span className="text-xs">•</span>
+                        <span className="truncate">
+                          {formatDistanceToNow(conversation.updatedAt, { 
+                            addSuffix: true,
+                            locale: es 
+                          })}
+                        </span>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
                     </div>
                   </Card>
                 ))}
