@@ -287,7 +287,6 @@ yarn-error.log*
 *.pyd
 *.log
 *.sqlite3
-*.db
 *.egg-info/
 dist/
 build/
