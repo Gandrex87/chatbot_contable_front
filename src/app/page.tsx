@@ -12,12 +12,17 @@ import { Button } from "@/components/ui/button";
 import { PanelLeft } from "lucide-react";
 import type { Message } from "@/lib/types";
 import { Toaster } from "@/components/ui/toaster";
+import { getConversationMessages } from "@/app/actions/conversations";
+import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [loadingConversation, setLoadingConversation] = useState(false);
   const chatRef = useRef<ChatInterfaceHandle>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -28,6 +33,50 @@ export default function HomePage() {
   const handleNewConversation = () => {
     if (chatRef.current) {
       chatRef.current.clearConversation();
+      setCurrentSessionId(null);
+    }
+  };
+
+  const handleSelectConversation = async (sessionId: string) => {
+    if (!user?.username) return;
+    
+    try {
+      setLoadingConversation(true);
+      
+      // Cargar mensajes de la conversación seleccionada
+      const conversationMessages = await getConversationMessages(sessionId, user.username);
+      
+      if (conversationMessages.length === 0) {
+        toast({
+          title: "Conversación vacía",
+          description: "No se encontraron mensajes en esta conversación.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Actualizar el sessionId actual
+      setCurrentSessionId(sessionId);
+      
+      // Cargar los mensajes en el chat
+      if (chatRef.current) {
+        chatRef.current.loadConversation(conversationMessages, sessionId);
+        
+        toast({
+          title: "Conversación cargada",
+          description: `${conversationMessages.length} mensajes cargados.`,
+        });
+      }
+      
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la conversación.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingConversation(false);
     }
   };
 
@@ -50,7 +99,12 @@ export default function HomePage() {
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Sidebar - Fijo sin scroll */}
       <aside className="hidden md:flex md:w-64 lg:w-72 border-r bg-card">
-        <AppSidebar messages={messages} onNewConversation={handleNewConversation} />
+        <AppSidebar 
+          messages={messages} 
+          onNewConversation={handleNewConversation}
+          currentSessionId={currentSessionId}
+          onSelectConversation={handleSelectConversation}
+        />
       </aside>
       
       {/* Área principal - Con estructura de flex columna */}
@@ -66,7 +120,12 @@ export default function HomePage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-80">
-                <AppSidebar messages={messages} onNewConversation={handleNewConversation} />
+                <AppSidebar 
+                  messages={messages} 
+                  onNewConversation={handleNewConversation}
+                  currentSessionId={currentSessionId}
+                  onSelectConversation={handleSelectConversation}
+                />
               </SheetContent>
             </Sheet>
           }

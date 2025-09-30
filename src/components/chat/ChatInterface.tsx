@@ -44,14 +44,16 @@ const welcomeMessage: Message = {
 
 type ChatInterfaceProps = {
   onMessagesUpdate?: (messages: Message[]) => void;
+  onSessionIdUpdate?: (sessionId: string) => void;
 };
 
 export interface ChatInterfaceHandle {
   clearConversation: () => void;
+  loadConversation: (messages: Message[], sessionId: string) => void;
 }
 
 export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
-  ({ onMessagesUpdate }, ref) => {
+  ({ onMessagesUpdate, onSessionIdUpdate }, ref) => {
     const { user } = useAuth();
     const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
     const [input, setInput] = useState("");
@@ -67,6 +69,12 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
         setMessages([welcomeMessage]);
         setInput("");
         setIsLoading(false);
+      },
+      loadConversation: (loadedMessages: Message[], loadedSessionId: string) => {
+        setMessages(loadedMessages);
+        setSessionId(loadedSessionId);
+        setInput("");
+        setIsLoading(false);
       }
     }), []);
 
@@ -75,9 +83,12 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
       const initSession = async () => {
         const id = await generateSessionId();
         setSessionId(id);
+        if (onSessionIdUpdate) {
+          onSessionIdUpdate(id);
+        }
       };
       initSession();
-    }, []);
+    }, [onSessionIdUpdate]);
 
     // Notificar cambios de mensajes al componente padre
     useEffect(() => {

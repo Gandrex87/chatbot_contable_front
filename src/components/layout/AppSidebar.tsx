@@ -7,13 +7,16 @@ import type { Message } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import Image from "next/image";
+import { ConversationsList } from "./ConversationsList";
 
 type AppSidebarProps = {
   messages: Message[];
   onNewConversation?: () => void;
+  currentSessionId?: string | null;
+  onSelectConversation?: (sessionId: string) => void;
 };
 
-export function AppSidebar({ messages, onNewConversation }: AppSidebarProps) {
+export function AppSidebar({ messages, onNewConversation, currentSessionId, onSelectConversation }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const userMessages = messages.filter((m) => m.role === "user").length;
   const assistantMessages = messages.filter((m) => m.role === "assistant").length;
@@ -38,10 +41,10 @@ export function AppSidebar({ messages, onNewConversation }: AppSidebarProps) {
         </div>
       </div>
 
-      <Separator className="my-4 mx-3" />
+      <Separator className="my-3 mx-3" />
 
       {/* Botón Nueva Conversación */}
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-2">
         <Button 
           onClick={onNewConversation}
           variant="outline"
@@ -53,13 +56,28 @@ export function AppSidebar({ messages, onNewConversation }: AppSidebarProps) {
         </Button>
       </div>
 
+      {/* Lista de conversaciones */}
+      {onSelectConversation && (
+        <>
+          <Separator className="mb-3 mx-3" />
+          <div className="px-2 flex-grow overflow-hidden">
+            <ConversationsList 
+              currentSessionId={currentSessionId}
+              onSelectConversation={onSelectConversation}
+            />
+          </div>
+        </>
+      )}
+
+      <Separator className="my-3 mx-3" />
+
       {/* Estadísticas - Con menos padding lateral */}
       <div className="px-2">
         <Card className="bg-secondary/50 border-0 shadow-sm">
           <CardHeader className="py-2 px-3">
             <CardTitle className="text-sm font-headline flex items-center gap-2">
               <MessageSquare className="w-3.5 h-3.5"/>
-              Estadísticas
+              Estadísticas Actuales
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs space-y-1.5 px-3 pb-3">
@@ -78,9 +96,6 @@ export function AppSidebar({ messages, onNewConversation }: AppSidebarProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Espacio flexible */}
-      <div className="flex-grow" />
 
       {/* Botón de logout - Con padding consistente */}
       <div className="p-3">
