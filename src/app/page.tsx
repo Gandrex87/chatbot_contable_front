@@ -138,7 +138,7 @@ export default function HomePage() {
         
         {/* Footer - Fijo en la parte inferior */}
         <footer className="border-t p-4 text-center text-xs text-muted-foreground bg-card">
-          © {new Date().getFullYear()} LION CAPITAL GROUP S,L. All rights reserved.
+          © {new Date().getFullYear()} © 2025 Lion Capital Group · Términos de uso · Política de Cookies · Construido por Lion Capital Group
         </footer>
       </div>
     </div>

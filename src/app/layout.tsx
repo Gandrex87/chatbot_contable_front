@@ -12,7 +12,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'FiscalFlow - LION CAPITAL GROUP',
+  title: 'Chat_Contable - LION CAPITAL GROUP',
   description: 'Asistente fiscal y contable impulsado por IA.',
 };
 

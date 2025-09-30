@@ -24,7 +24,7 @@ export function Header({ mobileMenuTrigger }: HeaderProps) {
           />
         )}
         <h1 className="text-xl font-bold font-headline text-primary">
-          LION CAPITAL GROUP S,L
+        Lion Capital Group
         </h1>
       </div>
     </header>
