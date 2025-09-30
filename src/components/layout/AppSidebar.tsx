@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageSquare } from "lucide-react";
+import { LogOut, MessageSquare, MessageSquarePlus } from "lucide-react";
 import type { Message } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
@@ -10,9 +10,10 @@ import Image from "next/image";
 
 type AppSidebarProps = {
   messages: Message[];
+  onNewConversation?: () => void;
 };
 
-export function AppSidebar({ messages }: AppSidebarProps) {
+export function AppSidebar({ messages, onNewConversation }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const userMessages = messages.filter((m) => m.role === "user").length;
   const assistantMessages = messages.filter((m) => m.role === "assistant").length;
@@ -37,14 +38,27 @@ export function AppSidebar({ messages }: AppSidebarProps) {
         </div>
       </div>
 
-      <Separator className="my-3 mx-3" />
+      <Separator className="my-4 mx-3" />
+
+      {/* Botón Nueva Conversación */}
+      <div className="px-3 pb-3">
+        <Button 
+          onClick={onNewConversation}
+          variant="outline"
+          className="w-full justify-start"
+          size="sm"
+        >
+          <MessageSquarePlus className="mr-2 h-4 w-4" />
+          Nueva Conversación
+        </Button>
+      </div>
 
       {/* Estadísticas - Con menos padding lateral */}
       <div className="px-2">
         <Card className="bg-secondary/50 border-0 shadow-sm">
           <CardHeader className="py-2 px-3">
             <CardTitle className="text-sm font-headline flex items-center gap-2">
-              <MessageSquare className="w-4.0 h-4.0"/>
+              <MessageSquare className="w-3.5 h-3.5"/>
               Estadísticas
             </CardTitle>
           </CardHeader>

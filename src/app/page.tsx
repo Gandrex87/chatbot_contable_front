@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Header } from "@/components/layout/Header";
-import { ChatInterface } from "@/components/chat/ChatInterface";
+import { ChatInterface, ChatInterfaceHandle } from "@/components/chat/ChatInterface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,19 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
+  const chatRef = useRef<ChatInterfaceHandle>(null);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/login");
     }
   }, [user, loading, router]);
+
+  const handleNewConversation = () => {
+    if (chatRef.current) {
+      chatRef.current.clearConversation();
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -40,11 +47,10 @@ export default function HomePage() {
 
   return (
     <>
-    {/* Contenedor principal con altura fija de pantalla */}
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Sidebar - Fijo sin scroll */}
-      <aside className="hidden md:flex md:w-58 lg:w-50 border-r bg-card">
-        <AppSidebar messages={messages} />
+      <aside className="hidden md:flex md:w-64 lg:w-72 border-r bg-card">
+        <AppSidebar messages={messages} onNewConversation={handleNewConversation} />
       </aside>
       
       {/* Área principal - Con estructura de flex columna */}
@@ -60,7 +66,7 @@ export default function HomePage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-80">
-                <AppSidebar messages={messages} />
+                <AppSidebar messages={messages} onNewConversation={handleNewConversation} />
               </SheetContent>
             </Sheet>
           }
@@ -68,7 +74,7 @@ export default function HomePage() {
         
         {/* Área del chat - Ocupa el espacio restante */}
         <main className="flex-1 overflow-hidden">
-          <ChatInterface />
+          <ChatInterface ref={chatRef} onMessagesUpdate={setMessages} />
         </main>
         
         {/* Footer - Fijo en la parte inferior */}
