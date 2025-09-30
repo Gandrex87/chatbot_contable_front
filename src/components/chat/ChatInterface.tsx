@@ -214,7 +214,7 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
             </Button>
           </form>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            FiscalFlow puede cometer errores. Considera verificar la información importante.
+            El Agente puede cometer errores. Considera verificar la información importante.
           </p>
         </div>
       </div>
