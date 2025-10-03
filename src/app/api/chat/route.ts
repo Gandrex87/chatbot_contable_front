@@ -56,15 +56,52 @@ export async function POST(req: Request) {
     console.log("n8n Response Status:", n8nResponse.status);
     console.log("n8n Response Headers:", Object.fromEntries(n8nResponse.headers.entries()));
 
+    const contentType = n8nResponse.headers.get('content-type');
+    console.log("Content-Type:", contentType);
+
+    // IMPORTANTE: Detectar si la respuesta es HTML (error page)
+    if (contentType?.includes('text/html')) {
+      console.error("Received HTML response - likely an error page");
+      
+      // Leer el HTML para determinar el tipo de error
+      const htmlContent = await n8nResponse.text();
+      console.log("HTML Error Content (first 500 chars):", htmlContent.substring(0, 500));
+      
+      // Detectar error 524 (timeout de Cloudflare)
+      if (htmlContent.includes('524') || htmlContent.includes('timeout')) {
+        return new Response(
+          "⏱️ La búsqueda web está tardando demasiado debido al límite de tiempo del servidor (Cloudflare). Este es un problema conocido con búsquedas complejas. Por favor:\n\n" +
+          "1. Intenta con una consulta más específica\n" +
+          "2. Divide tu pregunta en partes más pequeñas\n" +
+          "3. Evita solicitar búsquedas muy amplias\n\n" +
+          "Nota: La búsqueda se completó en el servidor pero no pudo enviarse a tiempo.",
+          { 
+            status: 200,
+            headers: { "Content-Type": "text/plain; charset=utf-8" }
+          }
+        );
+      }
+      
+      // Otros errores HTML
+      return new Response(
+        "❌ El servidor devolvió una página de error en lugar de la respuesta esperada. " +
+        "Esto suele ocurrir con búsquedas muy largas o complejas. " +
+        "Por favor, intenta con una consulta más simple.",
+        { 
+          status: 200,
+          headers: { "Content-Type": "text/plain; charset=utf-8" }
+        }
+      );
+    }
+
+    // Verificar el status después de verificar el content-type
     if (!n8nResponse.ok) {
       const errorBody = await n8nResponse.text();
       console.error("n8n API error:", errorBody);
       return new Response(`Error from n8n: ${errorBody}`, { status: n8nResponse.status });
     }
-
-    const contentType = n8nResponse.headers.get('content-type');
-    console.log("Content-Type:", contentType);
     
+    // Manejar respuesta streaming (text/plain)
     if (contentType?.includes('text/plain')) {
       console.log("Returning text/plain response");
       return new Response(n8nResponse.body, {
@@ -74,7 +111,7 @@ export async function POST(req: Request) {
         },
       });
     } else {
-      // Obtener el response como texto primero para debugging
+      // Respuesta JSON
       const responseText = await n8nResponse.text();
       console.log("Raw n8n Response:", responseText);
       
@@ -115,3 +152,7 @@ export async function POST(req: Request) {
     return new Response("❌ Error interno del servidor", { status: 500 });
   }
 }
+
+// Configuración opcional para Next.js 13+ App Router
+export const runtime = 'nodejs'; // Cambiar de 'edge' a 'nodejs' para mejor manejo de streams
+export const maxDuration = 300; // 5 minutos
