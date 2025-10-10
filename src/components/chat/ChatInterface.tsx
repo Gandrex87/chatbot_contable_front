@@ -6,38 +6,35 @@ import type { Message } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send } from "lucide-react";
+import { Send, Paperclip, X, FileSpreadsheet } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { generateSessionId } from "@/ai/flows/generate-session-id";
 import { extractReportId } from "@/ai/flows/extract-report-id";
+import { useToast } from "@/hooks/use-toast";
 
 const welcomeMessage: Message = {
   id: "0",
   role: "assistant",
-  content: `Soy tu asistente especializado en normativa contable española.
+  content: `Soy tu Asistente Financiero y Contable.
 
 ## 📚 Puedo ayudarte con:
 
-**Consultas normativas**
-- Plan General Contable
-- Módulos IRPF 2024-2025
-- Reglamento IVA y facturación
-- Epígrafes IAE
+**1. Consultas Expertas**
+Respondo tus dudas sobre normativa contable y fiscal, desde el Plan General Contable hasta las últimas novedades del BOE.
 
-**Información actualizada**
-- Últimas novedades fiscales
-- Cambios normativos del BOE
-- Actualizaciones de la Agencia Tributaria
+**2. Reportes de Holded a Medida**
+Genero reportes de **Pérdidas y Ganancias** o **Balance de Situación** para Lion Capital y Amon Estate de cualquier período.
 
-**Reportes financieros de Holded**
-- Genera y descarga PDFs de Pérdidas y Ganancias
-- Balance de Situación por cualquier período
+**3. Análisis Inteligente de Archivos**
+**Sube tu Excel de cashflow** y te daré un análisis completo con resumen ejecutivo, tendencias de gasto y recomendaciones.
+*Límite actual: archivos .xlsx de hasta 5MB.*
 
-## 💡 Ejemplos de consultas:
+## 💡 ¿Cómo puedes preguntarme?
 
-- *"¿Cuéntame sobre el Artículo 11 del BOE de 1992?"*
-- *"Genera el reporte de pérdidas y ganancias del Q1 2025"*
-- *"Dame el balance de situación de 2025"*
+- *"¿Cuál era el tipo de IVA para la hostelería en 2022?"*
+- *"Genera el P&L de Lion Capital del último trimestre"*
+- *"Dame el balance de Amon Estate de este año"*
+- *Adjunta un archivo y escribe: "analiza este flujo de caja"*
 
 ¿En qué puedo ayudarte hoy?`,
 };
@@ -59,7 +56,11 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [filePreview, setFilePreview] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
 
     // Exponer método para limpiar conversación
     useImperativeHandle(ref, () => ({
@@ -69,12 +70,16 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
         setMessages([welcomeMessage]);
         setInput("");
         setIsLoading(false);
+        setSelectedFile(null);
+        setFilePreview(null);
       },
       loadConversation: (loadedMessages: Message[], loadedSessionId: string) => {
         setMessages(loadedMessages);
         setSessionId(loadedSessionId);
         setInput("");
         setIsLoading(false);
+        setSelectedFile(null);
+        setFilePreview(null);
       }
     }), []);
 
@@ -107,17 +112,86 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
       }
     }, [messages]);
 
+    // Función para manejar la selección de archivos
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        // Validar que sea un archivo Excel
+        const validTypes = [
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel'
+        ];
+        
+        if (!validTypes.includes(file.type) && !file.name.endsWith('.xlsx')) {
+          toast({
+            title: "Archivo no válido",
+            description: "Por favor selecciona un archivo Excel (.xlsx)",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Validar tamaño (5MB máximo)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Archivo muy grande",
+            description: "El archivo no debe superar los 5MB",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setSelectedFile(file);
+        setFilePreview(file.name);
+      }
+    };
+
+    // Función para eliminar el archivo seleccionado
+    const handleRemoveFile = () => {
+      setSelectedFile(null);
+      setFilePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
     const handleSendMessage = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!input.trim() || isLoading) return;
+      if ((!input.trim() && !selectedFile) || isLoading) return;
 
+      const messageText = input + (selectedFile ? `\n\n📎 Archivo adjunto: ${selectedFile.name}` : '');
       const userMessage: Message = {
         id: Date.now().toString(),
         role: "user",
-        content: input,
+        content: messageText,
       };
       setMessages((prev) => [...prev, userMessage]);
       setInput("");
+      
+      // Preparar el archivo si existe
+      let fileData = null;
+      if (selectedFile) {
+        const reader = new FileReader();
+        try {
+          fileData = await new Promise((resolve, reject) => {
+            reader.onload = (e) => resolve({
+              name: selectedFile.name,
+              type: selectedFile.type,
+              data: e.target?.result?.toString().split(',')[1] // Obtener solo la parte base64
+            });
+            reader.onerror = reject;
+            reader.readAsDataURL(selectedFile);
+          });
+        } catch (error) {
+          console.error("Error reading file:", error);
+          toast({
+            title: "Error al leer el archivo",
+            description: "No se pudo procesar el archivo seleccionado",
+            variant: "destructive"
+          });
+        }
+      }
+
       setIsLoading(true);
 
       const assistantMessageId = (Date.now() + 1).toString();
@@ -127,16 +201,26 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
       ]);
 
       try {
+        const payload = {
+          message: input || "Archivo adjunto para análisis",
+          sessionId,
+          username: user?.username,
+          history: messages,
+          ...(fileData && { file: fileData })
+        };
+
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: input,
-            sessionId,
-            username: user?.username,
-            history: messages,
-          }),
+          body: JSON.stringify(payload),
         });
+
+        // Limpiar archivo después de enviar
+        setSelectedFile(null);
+        setFilePreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
 
         if (!response.body) throw new Error("No response body");
 
@@ -173,10 +257,30 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
 
       } catch (error) {
         console.error("Chat API error:", error);
+        
+        // Detectar si el error es por timeout
+        let errorMessage = "Lo siento, ha ocurrido un error.";
+        let isTimeout = false;
+        
+        if (error instanceof Error) {
+          // Verificar si el mensaje contiene indicios de timeout
+          if (error.message.includes('524') || 
+              error.message.includes('timeout') || 
+              error.message.includes('tardando')) {
+            errorMessage = "⏱️ La búsqueda excedió el tiempo límite. Las búsquedas web complejas pueden tardar más de lo permitido por el servidor.";
+            isTimeout = true;
+          }
+        }
+        
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
-              ? { ...msg, content: "Lo siento, ha ocurrido un error.", error: (error as Error).message }
+              ? { 
+                  ...msg, 
+                  content: errorMessage, 
+                  error: (error as Error).message,
+                  isTimeout // Añadir flag para identificar timeouts
+                }
               : msg
           )
         );
@@ -207,23 +311,64 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
 
         {/* Input Area - Responsive */}
         <div className="border-t p-3 md:p-4 bg-card/50 backdrop-blur">
+          {/* Mostrar preview del archivo si existe */}
+          {filePreview && (
+            <div className="flex items-center gap-2 mb-2 p-2 bg-muted rounded-md max-w-4xl mx-auto">
+              <FileSpreadsheet className="h-4 w-4 text-green-600 flex-shrink-0" />
+              <span className="text-sm flex-1 truncate">{filePreview}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleRemoveFile}
+                className="h-6 w-6 p-0"
+                type="button"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+          
           <form onSubmit={handleSendMessage} className="flex items-center gap-2 max-w-4xl mx-auto">
+            {/* Input de archivo oculto */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              id="file-upload"
+              className="hidden"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={handleFileSelect}
+            />
+            
+            {/* Botón para seleccionar archivo */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 md:h-10 md:w-10"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Escribe tu consulta aquí..."
+              placeholder={selectedFile ? "Añade un mensaje para el archivo..." : "Escribe tu consulta aquí..."}
               disabled={isLoading}
               autoComplete="off"
               className="flex-1 h-9 md:h-10 text-sm md:text-base"
             />
+            
             <Button 
               type="submit" 
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || (!input.trim() && !selectedFile)}
               className="h-9 w-9 md:h-10 md:w-10 p-0"
             >
               <Send className="h-4 w-4" />
             </Button>
           </form>
+          
           <p className="text-xs text-muted-foreground mt-2 text-center">
             El Agente puede cometer errores. Considera verificar la información importante.
           </p>

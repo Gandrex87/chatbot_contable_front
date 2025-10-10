@@ -3,15 +3,16 @@ import { getUserInfo } from '@/lib/user-config';
 
 export async function POST(req: Request) {
   try {
-    const { message, sessionId: clientSessionId, username } = await req.json();
+    const { message, sessionId: clientSessionId, username, file } = await req.json();
     
     console.log("=== CHAT API DEBUG ===");
     console.log("Message:", message);
     console.log("ClientSessionId:", clientSessionId);
     console.log("Username:", username);
+    console.log("File attached:", file ? file.name : 'None');
 
-    if (!message) {
-      return new Response("Message is required", { status: 400 });
+    if (!message && !file) {
+      return new Response("Message or file is required", { status: 400 });
     }
 
     let sessionId = clientSessionId;
@@ -23,10 +24,13 @@ export async function POST(req: Request) {
     const userInfo = getUserInfo(username || 'usuario');
     const personalizedSessionId = username ? `${username}_${sessionId}` : sessionId;
     
-    const n8nWebhookUrl = "https://n8n.lioncapitalg.com/webhook/42cdc9f0-2733-4771-95ff-4b14f7f1e349/chat";
-    const payload = {
+    //const n8nWebhookUrl = "https://n8n.lioncapitalg.com/webhook/42cdc9f0-2733-4771-95ff-4b14f7f1e349/chat";
+    //nuevo flujo con router
+    const n8nWebhookUrl = "https://n8n.lioncapitalg.com/webhook/fcfab710-02f4-4395-96b5-8713563fe0a7/chat";
+    // Preparar payload con archivo si existe
+    const payload: any = {
       action: "sendMessage",
-      chatInput: message,
+      chatInput: message || "Archivo adjunto para análisis",
       sessionId: personalizedSessionId,
       userMetadata: {
         userId: username || 'usuario',
@@ -36,7 +40,15 @@ export async function POST(req: Request) {
       }
     };
 
-    console.log("Payload to n8n:", JSON.stringify(payload, null, 2));
+    // Añadir archivo al payload si existe
+    if (file) {
+      payload.file = file;
+    }
+
+    console.log("Payload to n8n:", JSON.stringify({
+      ...payload,
+      file: file ? { name: file.name, type: file.type, size: file.data?.length } : undefined
+    }, null, 2));
 
     // Crear AbortController para timeout
     const controller = new AbortController();
@@ -70,10 +82,7 @@ export async function POST(req: Request) {
       // Detectar error 524 (timeout de Cloudflare)
       if (htmlContent.includes('524') || htmlContent.includes('timeout')) {
         return new Response(
-          "⏱️ La búsqueda web está tardando demasiado debido al límite de tiempo del servidor (Cloudflare). Este es un problema conocido con búsquedas complejas. Por favor:\n\n" +
-          "1. Intenta con una consulta más específica\n" +
-          "2. Divide tu pregunta en partes más pequeñas\n" +
-          "3. Evita solicitar búsquedas muy amplias\n\n" +
+          "⏱️ La búsqueda web está tardando demasiado debido al límite de tiempo del servidor . Este es un problema conocido con búsquedas complejas. Por favor:\n\n" +
           "Nota: La búsqueda se completó en el servidor pero no pudo enviarse a tiempo.",
           { 
             status: 200,
@@ -85,8 +94,7 @@ export async function POST(req: Request) {
       // Otros errores HTML
       return new Response(
         "❌ El servidor devolvió una página de error en lugar de la respuesta esperada. " +
-        "Esto suele ocurrir con búsquedas muy largas o complejas. " +
-        "Por favor, intenta con una consulta más simple.",
+        "Esto suele ocurrir con búsquedas muy largas ",
         { 
           status: 200,
           headers: { "Content-Type": "text/plain; charset=utf-8" }
